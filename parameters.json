@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "Project001"
+  },
+  {
+    "ParameterKey": "VPCCIDR",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "SubnetPub1CIDR",
+    "ParameterValue": "10.0.10.0/24"
+  },
+  {
+    "ParameterKey": "SubnetPub2CIDR",
+    "ParameterValue": "10.0.11.0/24"
+  },
+  {
+    "ParameterKey": "SubnetWeb1CIDR",
+    "ParameterValue": "10.0.20.0/24"
+  },
+  {
+    "ParameterKey": "SubnetWeb2CIDR",
+    "ParameterValue": "10.0.21.0/24"
+  },
+  {
+    "ParameterKey": "SubnetApp1CIDR",
+    "ParameterValue": "10.0.30.0/24"
+  },
+  {
+    "ParameterKey": "SubnetApp2CIDR",
+    "ParameterValue": "10.0.31.0/24"
+  },
+  {
+    "ParameterKey": "SubnetDB1CIDR",
+    "ParameterValue": "10.0.40.0/24"
+  },
+  {
+    "ParameterKey": "SubnetDB2CIDR",
+    "ParameterValue": "10.0.41.0/24"
+  }
+]

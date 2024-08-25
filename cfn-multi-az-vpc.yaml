@@ -1,0 +1,1045 @@
+# vpc.yaml
+#
+# This program is licensed under the terms of the GNU General Public License v3.0.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  The cfn-multi-az-vpc.yaml template creates the network resources for
+  a virtual private cloud with public access, web, application, and
+  database tiers. Components include an internet gateway and redundant
+  NAT gateways; public and private subnets spread over two Availability
+  Zones, with route tables for each subnet; network access control lists
+  to secure inbound and outbound subnet traffic; and security groups for
+  the instances in each tier.
+
+Metadata:
+  License: GNU General Public License v3.0
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment and Network Configuration
+        Parameters:
+          - EnvironmentName
+          - VPCCIDR
+          - SubnetPub1CIDR
+          - SubnetPub2CIDR
+          - SubnetWeb1CIDR
+          - SubnetWeb2CIDR
+          - SubnetApp1CIDR
+          - SubnetApp2CIDR
+          - SubnetDB1CIDR
+          - SubnetDB2CIDR
+    ParameterLabels:
+      EnvironmentName:
+        default: Envronment Name
+      VPCCIDR:
+        default: VPC CIDR
+      SubnetPub1CIDR:
+        default: Subnet Pub 1 CIDR
+      SubnetPub2CIDR:
+        default: Subnet Pub 2 CIDR
+      SubnetWeb1CIDR:
+        default: Subnet Web 1 CIDR
+      SubnetWeb2CIDR:
+        default: Subnet Web 2 CIDR
+      SubnetApp1CIDR:
+        default: Subnet App 1 CIDR
+      SubnetApp2CIDR:
+        default: Subnet App 2 CIDR
+      SubnetDB1CIDR:
+        default: Subnet DB 1 CIDR
+      SubnetDB2CIDR:
+        default: Subnet DB 2 CIDR
+
+Parameters:
+  EnvironmentName:
+    Description: Please enter an environment name to identify each stack resource
+    Type: String
+    Default: Project001
+  VPCCIDR:
+    Description: Please enter the CIDR block for the VPC
+    Type: String
+    Default: 10.0.0.0/16
+  SubnetPub1CIDR:
+    Description: Please enter the CIDR block for the public access subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.10.0/24
+  SubnetPub2CIDR:
+    Description: Please enter the CIDR block for the public access subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.11.0/24
+  SubnetWeb1CIDR:
+    Description: Please enter the CIDR block for the web server subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.20.0/24
+  SubnetWeb2CIDR:
+    Description: Please enter the CIDR block for the web server subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.21.0/24
+  SubnetApp1CIDR:
+    Description: Please enter the CIDR block for the application server subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.30.0/24
+  SubnetApp2CIDR:
+    Description: Please enter the CIDR block for the application server subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.31.0/24
+  SubnetDB1CIDR:
+    Description: Please enter the CIDR block for the database server subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.40.0/24
+  SubnetDB2CIDR:
+    Description: Please enter the CIDR block for the database server subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.41.0/24
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Internet Gateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  SubnetPub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref SubnetPub1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Pub 1 (AZ1)
+
+  SubnetPub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Ref SubnetPub2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Pub 2 (AZ2)
+
+  SubnetWeb1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref SubnetWeb1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Web 1 (AZ1)
+
+  SubnetWeb2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SubnetWeb2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Web 2 (AZ2)
+
+  SubnetApp1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref SubnetApp1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet App 1 (AZ1)
+
+  SubnetApp2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SubnetApp2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet App 2 (AZ2)
+
+  SubnetDB1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref SubnetDB1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet DB 1 (AZ1)
+
+  SubnetDB2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref SubnetDB2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet DB 2 (AZ2)
+
+  NATGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NATGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NATGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGateway1EIP.AllocationId
+      SubnetId: !Ref SubnetPub1
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NAT Gateway 1 (AZ1)
+
+  NATGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGateway2EIP.AllocationId
+      SubnetId: !Ref SubnetPub2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NAT Gateway 2 (AZ2)
+
+  SubnetPub1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Pub 1 Route Table
+
+  SubnetPub1Route:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref SubnetPub1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetPub1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetPub1RouteTable
+      SubnetId: !Ref SubnetPub1
+
+  SubnetPub2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Pub 2 Route Table
+
+  SubnetPub2Route:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref SubnetPub2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetPub2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetPub2RouteTable
+      SubnetId: !Ref SubnetPub2
+
+  SubnetWeb1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Web 1 Route Table
+
+  SubnetWeb1Route:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway1
+    Properties:
+      RouteTableId: !Ref SubnetWeb1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway1
+
+  SubnetWeb1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetWeb1RouteTable
+      SubnetId: !Ref SubnetWeb1
+
+  SubnetWeb2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet Web 2 Route Table
+
+  SubnetWeb2Route:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway2
+    Properties:
+      RouteTableId: !Ref SubnetWeb2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway2
+
+  SubnetWeb2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetWeb2RouteTable
+      SubnetId: !Ref SubnetWeb2
+
+  SubnetApp1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet App 1 Route Table
+
+  SubnetApp1Route:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway1
+    Properties:
+      RouteTableId: !Ref SubnetApp1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway1
+
+  SubnetApp1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetApp1RouteTable
+      SubnetId: !Ref SubnetApp1
+
+  SubnetApp2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet App 2 Route Table
+
+  SubnetApp2Route:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway2
+    Properties:
+      RouteTableId: !Ref SubnetApp2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway2
+
+  SubnetApp2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetApp2RouteTable
+      SubnetId: !Ref SubnetApp2
+
+  SubnetDB1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet DB 1 Route Table
+
+  SubnetDB1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetDB1RouteTable
+      SubnetId: !Ref SubnetDB1
+
+  SubnetDB2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Subnet DB 2 Route Table
+
+  SubnetDB2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref SubnetDB2RouteTable
+      SubnetId: !Ref SubnetDB2
+
+  SecurityGroupPub:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for public access servers"
+      GroupName: "SecurityGroupPub"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Security Group Pub
+      
+  SecurityGroupWeb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for web servers"
+      GroupName: "SecurityGroupWeb"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Security Group Web
+
+  SecurityGroupApp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for app servers"
+      GroupName: "SecurityGroupApp"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Security Group App
+
+  SecurityGroupDB:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for DB servers"
+      GroupName: "SecurityGroupDB"
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Security Group DB
+
+  InboundRulePub:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 22 
+      ToPort: 22
+      CidrIp: 192.168.0.0/16
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupPub
+          - GroupId
+
+  OutboundRulePub:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 443 
+      ToPort: 443
+      DestinationSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupWeb
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupPub
+          - GroupId
+
+  InboundRuleWeb:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupPub
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupWeb
+          - GroupId
+
+  OutboundRuleWeb:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 443 
+      ToPort: 443
+      DestinationSecurityGroupId: 
+        Fn::GetAtt:
+          - SecurityGroupApp
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupWeb
+          - GroupId
+
+  InboundRuleApp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupWeb
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupApp
+          - GroupId
+
+  OutboundRuleApp:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 3306 
+      ToPort: 3306
+      DestinationSecurityGroupId: 
+        Fn::GetAtt:
+          - SecurityGroupDB
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupApp
+          - GroupId
+
+  InboundRuleDB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupApp
+          - GroupId
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupDB
+          - GroupId
+
+  OutboundRuleDB:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      IpProtocol: -1
+      CidrIp: 127.0.0.1/32
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupDB
+          - GroupId
+
+  NACLSubnetPub1:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet Pub 1
+  InboudRule100Pub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: 192.168.0.0/16
+      PortRange:
+        From: 22
+        To: 22
+  InboudRule110Pub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule100Pub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: 192.168.0.0/16
+      PortRange:
+        From: 22
+        To: 22
+  OutboudRule110Pub1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb1CIDR
+      PortRange:
+        From: 443
+        To: 443
+
+  NACLSubnetPub2:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet Pub 2
+  InboudRule100Pub2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: 192.168.0.0/16
+      PortRange:
+        From: 22
+        To: 22
+  InboudRule110Pub2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb2CIDR
+      PortRange:
+        From: 443 
+        To: 443
+  OutboudRule100Pub2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: 192.168.0.0/16
+      PortRange:
+        From: 22
+        To: 22
+  OutboudRule110Pub2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetPub2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb2CIDR
+      PortRange:
+        From: 443
+        To: 443
+
+  NACLSubnetWeb1:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet Web 1
+  InboudRule100Web1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetPub1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  InboudRule110Web1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule100Web1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetPub1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule110Web1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp1CIDR
+      PortRange:
+        From: 443
+        To: 443
+
+  NACLSubnetWeb2:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet Web 2
+  InboudRule100Web2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetPub2CIDR
+      PortRange:
+        From: 443
+        To: 443
+  InboudRule110Web2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp2CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule100Web2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetPub2CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule110Web2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetWeb2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp2CIDR
+      PortRange:
+        From: 443
+        To: 443
+
+  NACLSubnetApp1:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet App 1
+  InboudRule100App1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  InboudRule110App1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetDB1CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+  OutboudRule100App1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb1CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule110App1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp1
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetDB1CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+
+  NACLSubnetApp2:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet App 2
+  InboudRule100App2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb2CIDR
+      PortRange:
+        From: 443
+        To: 443
+  InboudRule110App2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetDB2CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+  OutboudRule100App2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetWeb2CIDR
+      PortRange:
+        From: 443
+        To: 443
+  OutboudRule110App2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetApp2
+      RuleNumber: 110
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetDB2CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+
+  NACLSubnetDB1:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet DB 1
+  InboudRule100DB1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetDB1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp1CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+  OutboudRule100DB1:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetDB1
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp1CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+
+  NACLSubnetDB2:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} NACL Subnet DB 2
+  InboudRule100DB2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetDB2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: false
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp2CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+  OutboudRule100DB2:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NACLSubnetDB2
+      RuleNumber: 100
+      Protocol: 6
+      Egress: true
+      RuleAction: allow
+      CidrBlock: !Ref SubnetApp2CIDR
+      PortRange:
+        From: 3306
+        To: 3306
+
+  SubnetPub1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetPub1
+      NetworkAclId: !Ref NACLSubnetPub1
+
+  SubnetPub2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetPub2
+      NetworkAclId: !Ref NACLSubnetPub2
+
+  SubnetWeb1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetWeb1
+      NetworkAclId: !Ref NACLSubnetWeb1
+
+  SubnetWeb2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetWeb2
+      NetworkAclId: !Ref NACLSubnetWeb2
+
+  SubnetApp1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetApp1
+      NetworkAclId: !Ref NACLSubnetApp1
+
+  SubnetApp2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetApp2
+      NetworkAclId: !Ref NACLSubnetApp2
+
+  SubnetDB1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetDB1
+      NetworkAclId: !Ref NACLSubnetDB1
+
+  SubnetDB2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref SubnetDB2
+      NetworkAclId: !Ref NACLSubnetDB2
+
+Outputs:
+  VPC:
+    Description: Reference to the created VPC
+    Value: !Ref VPC
+
+  SubnetPub1:
+    Description: Reference to the subnet for public access in AZ1.
+    Value: !Ref SubnetPub1
+
+  SubnetPub2:
+    Description: Reference to the subnet for public access in AZ2.
+    Value: !Ref SubnetPub2
+
+  SubnetWeb1:
+    Description: Reference to the subnet for web servers in AZ1.
+    Value: !Ref SubnetWeb1
+
+  SubnetWeb2:
+    Description: Reference to the subnet for web servers in AZ2.
+    Value: !Ref SubnetWeb2
+
+  SubnetApp1:
+    Description: Reference to the subnet for app servers in AZ1.
+    Value: !Ref SubnetApp1
+
+  SubnetApp2:
+    Description: Reference to the subnet for app servers in AZ2.
+    Value: !Ref SubnetApp2
+
+  SubnetDB1:
+    Description: Reference to the subnet for database servers in AZ1.
+    Value: !Ref SubnetDB1
+
+  SubnetDB2:
+    Description: Reference to the subnet for database servers in AZ2.
+    Value: !Ref SubnetDB2
+
+  SecurityGroupWeb:
+    Description: Reference to the security group for web server instances.
+    Value: !Ref SecurityGroupWeb
+
+  SecurityGroupApp:
+    Description: Reference to the security group for app server instances.
+    Value: !Ref SecurityGroupApp
+
+  SecurityGroupDB:
+    Description: Reference to the security group for RDS DB server instances.
+    Value: !Ref SecurityGroupDB
