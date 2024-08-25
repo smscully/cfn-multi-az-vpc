@@ -39,16 +39,16 @@ The template parameters, listed below, can be modified as necessary to fit withi
 
 |Parameter|Description|Default Value|
 |---------|-----------|-------------|
-|EnvironmentName|Environment name used by CloudFormation to identify each resource.|Multi-AZ VPC|
+|EnvironmentName|Environment name used by CloudFormation to identify each resource.|Project001|
 |VPCCIDR|CIDR block of the VPC.|10.0.0.0/16|
 |SubnetPub1CIDR|CIDR block of the public access subnet in AZ1.|10.0.10.0/24|
 |SubnetPub2CIDR|CIDR block of the public access subnet in AZ2.|10.0.11.0/24|
-|SubnetWeb1CIDR|CIDR block of the private web server subnet in AZ1.|10.0.20.0/24|
-|SubnetWeb2CIDR|CIDR block of the private web server subnet in AZ2.|10.0.21.0/24|
-|SubnetApp1CIDR|CIDR block of the private application server subnet in AZ1.|10.0.30.0/24|
-|SubnetApp2CIDR|CIDR block of the private application server subnet in AZ2.|10.0.31.0/24|
-|SubnetDB1CIDR|CIDR block of the private database server subnet in AZ1.|10.0.40.0/24|
-|SubnetDB2CIDR|CIDR block of the private database server subnet in AZ2.|10.0.41.0/24|
+|SubnetWeb1CIDR|CIDR block of the private subnet for web servers in AZ1.|10.0.20.0/24|
+|SubnetWeb2CIDR|CIDR block of the private subnet for web servers in AZ2.|10.0.21.0/24|
+|SubnetApp1CIDR|CIDR block of the private subnet for application servers in AZ1.|10.0.30.0/24|
+|SubnetApp2CIDR|CIDR block of the private subnet for application servers in AZ2.|10.0.31.0/24|
+|SubnetDB1CIDR|CIDR block of the private subnet for database servers in AZ1.|10.0.40.0/24|
+|SubnetDB2CIDR|CIDR block of the private subnet for database servers in AZ2.|10.0.41.0/24|
 
 ## Stack Output Values
 The stack exports the names of the VPC, subnets, and security groups, which can then be referenced by stacks that create other resources, such as EC2 instances.
@@ -121,4 +121,4 @@ SubnetDB1Route:
 
 ## License
 
-Licensed under the [GNU General Public License v3.0](../LICENSE).
+Licensed under the [GNU General Public License v3.0](./LICENSE).
