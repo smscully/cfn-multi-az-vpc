@@ -78,7 +78,7 @@ The template may be deployed using the AWS Console or the command line, the latt
 Navigate to the CloudFormation service in the AWS Console and create a stack with new resources. When prompted, specify the template, customize the template parameters if necessary, and create the stack.
 
 ### Using the AWS CLI
-The sample code below creates a stack named multi-az-vpc-test:
+The sample code below creates a stack named multi-az-vpc-test.
 
 **NOTE:** The ```bash --parameters ``` option is required only if the [parameters.json](./parameters.json) file has been modified with custom values. Before running, update the file paths and stack name as necessary.
  
