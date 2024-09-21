@@ -80,7 +80,7 @@ Navigate to the CloudFormation service in the AWS Console and create a stack wit
 ### Using the AWS CLI
 The sample code below creates a stack named multi-az-vpc-test.
 
-**NOTE:** The ```bash --parameters ``` option is required only if the [parameters.json](./parameters.json) file has been modified with custom values. Before running, update the file paths and stack name as necessary.
+> **NOTE:** The `--parameters` option is required only if the [parameters.json](./parameters.json) file has been modified with custom values. Before running, update the file paths and stack name as necessary.
  
 ```bash
 aws cloudformation create-stack --stack-name multi-az-vpc-test\
