@@ -11,26 +11,27 @@ Before launching the template, review the resources that will be created, as the
 The [cfn-multi-az-vpc.yaml](./cfn-multi-az-vpc.yaml) template creates the AWS resources described below.
 
 ### VPC
-One (1) VPC, spanning across two AZs (AZ1 and AZ2), is generated. The VPC contains all of the network resources created by the template.
+One VPC, spanning across two AZs (AZ1 and AZ2), is generated. The VPC contains all of the network resources created by the template.
 
 Traffic flow is designed with the expectation that bastion hosts and load balancers will be placed in the public access tier subnets; EC2 instances, EKS clusters, or Lambda functions in the web and application tier subnets; and RDS MySQL instances in the database tier subnets.
 
 ### IGW and NAT Gateways 
-The template creates one (1) IGW, which enables resources in the public subnets to reach the internet. To provide internet access for the private subnets, two (2) NAT gateways are created, with one (1) placed in each AZ for redundancy. 
+The template creates one IGW, which enables resources in the public subnets to reach the internet. To provide internet access for the private subnets, two NAT gateways are created, with one placed in each AZ for redundancy. 
 
-### Public and Private Subnets
-Two (2) public subnets are created, one (1) in each AZ. Six (6) private subnets are generated, two (2) in each of the web, application, and database tiers, spread across the two (2) AZs. 
+### Public Subnets, Private Subnets, and Custom Route Tables
+Two public subnets are created, one in each AZ. Six private subnets are generated, two in each of the web, application, and database tiers, spread across the two AZs. 
 
-To control traffic flow, route tables are created for each subnet. The route tables for the public access subnets each contain a route to the IGW, while the route tables for the web and application tier subnets each contain a route to the NAT gateway in their respective AZ. The route tables for the database tier subnets do not contain routes to the NAT gateway, primarily because hosted services such as AWS RDS do not require internet access for updates. These initial routes should be modified as circumstances dictate.
+A custom route table is created for each subnet. As a result, any routes added to support resources in the subnet do not unintentionally open routes to neighboring subnets in the VPC, which could be the case if all subnets used the main route table. [Click here](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html#custom-route-tables) to review AWS documentation regarding custom route tables. 
 
+The route tables for the public access subnets each contain a route to the IGW, while the route tables for the web and application tier subnets each contain a route to the NAT gateway in their respective AZ. The route tables for the database tier subnets do not contain routes to the NAT gateway, primarily because hosted services such as AWS RDS do not require internet access for updates. These initial routes should be modified as circumstances dictate.
 
 ### NACLs
-Eight (8) NACLs are configured to limit ingress and egress only to adjacent tier subnets in the same AZ. For example, Subnet App 1 can only send and receive traffic to and from Subnet Web 1 and Subnet DB 1. Ingress and egress are restricted by IP range and port.
+Eight NACLs are configured to limit ingress and egress only to adjacent tier subnets in the same AZ. For example, Subnet App 1 can only send and receive traffic to and from Subnet Web 1 and Subnet DB 1. Ingress and egress are restricted by IP range and port.
 
 For Subnet Pub 1 and Subnet Pub 2, ingress and egress outside the VPC is currently restricted to a placeholder private IP address range (192.168.0.0/16) on SSH port 22. If public facing resources are added to these subnets, such as bastion hosts or load balancers, the allowed IP ranges and ports should be updated accordingly.
 
 ### Security Groups
-A total of four (4) security groups are generated. Each security group functions as a firewall for the instances in each tier of subnets, limiting ingress and egress to instances in adjacent tier security groups.
+A total of four security groups are generated. Each security group functions as a firewall for the instances in each tier of subnets, limiting ingress and egress to instances in adjacent tier security groups.
 
 For example, the application tier security group (Security Group App) allows ingress traffic only on port 443 from instances in the web tier security group (Security Group Web). Egress is limited to port 3306 traffic destined for instances in the database tier security group (Security Group DB). Because security groups are stateful, response traffic is allowed for each of these rules.
 
@@ -69,15 +70,20 @@ The stack exports the names of the VPC, subnets, and security groups, which can 
 |SecurityGroupApp|Reference to the security group for application server instances.|
 |SecurityGroupDB|Reference to the security group for database server instances.|
 
-## Deployment Instructions
+## Getting Started
 
-### Prerequisites
-The template may be deployed using the AWS Console or the command line, the latter of which requires installation of the AWS CLI.
+### Dependencies
+The template may be deployed using the AWS Console or the AWS CLI.For AWS CLI installation instructions, [click here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
-### Using the AWS Console
+### Installation
+To install the script, either clone the [cfn-multi-az-vpc](.) repo or download the files to the local host. 
+
+## Usage
+
+### AWS Console
 Navigate to the CloudFormation service in the AWS Console and create a stack with new resources. When prompted, specify the template, customize the template parameters if necessary, and create the stack.
 
-### Using the AWS CLI
+### AWS CLI
 The sample code below creates a stack named multi-az-vpc-test.
 
 > **NOTE:** The `--parameters` option is required only if the [parameters.json](./parameters.json) file has been modified with custom values. Before running, update the file paths and stack name as necessary.
@@ -120,5 +126,4 @@ SubnetDB1Route:
 ```
 
 ## License
-
 Licensed under the [GNU General Public License v3.0](./LICENSE).
