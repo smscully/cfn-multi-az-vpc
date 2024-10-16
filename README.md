@@ -28,7 +28,7 @@ The route tables for the public access subnets each contain a route to the IGW, 
 ### NACLs
 Eight NACLs are configured to limit ingress and egress only to adjacent tier subnets in the same AZ. For example, Subnet App 1 can only send and receive traffic to and from Subnet Web 1 and Subnet DB 1. Ingress and egress are restricted by IP range and port.
 
-For Subnet Pub 1 and Subnet Pub 2, ingress and egress outside the VPC is currently restricted to a placeholder private IP address range (192.168.0.0/16) on SSH port 22. If public facing resources are added to these subnets, such as bastion hosts or load balancers, the allowed IP ranges and ports should be updated accordingly.
+For Subnet Pub 1 and Subnet Pub 2, ingress is currently restricted to a placeholder private IP address range (192.168.0.0/16) on ports 22 and 443. Egress is allowed to the same IP address range on ephemeral ports 1024-65535. If public facing resources are added to these subnets, such as bastion hosts or load balancers, the allowed IP ranges and ports should be updated accordingly.
 
 ### Security Groups
 A total of four security groups are generated. Each security group functions as a firewall for the instances in each tier of subnets, limiting ingress and egress to instances in adjacent tier security groups.

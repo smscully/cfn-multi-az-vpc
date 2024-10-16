@@ -588,20 +588,8 @@ Resources:
       RuleAction: allow
       CidrBlock: 192.168.0.0/16
       PortRange:
-        From: 22
-        To: 22
-  OutboudRule110Pub1:
-    Type: AWS::EC2::NetworkAclEntry
-    Properties:
-      NetworkAclId: !Ref NACLSubnetPub1
-      RuleNumber: 110
-      Protocol: 6
-      Egress: true
-      RuleAction: allow
-      CidrBlock: !Ref SubnetWeb1CIDR
-      PortRange:
-        From: 443
-        To: 443
+        From: 1024
+        To: 65535
 
   NACLSubnetPub2:
     Type: AWS::EC2::NetworkAcl
@@ -644,20 +632,8 @@ Resources:
       RuleAction: allow
       CidrBlock: 192.168.0.0/16
       PortRange:
-        From: 22
-        To: 22
-  OutboudRule110Pub2:
-    Type: AWS::EC2::NetworkAclEntry
-    Properties:
-      NetworkAclId: !Ref NACLSubnetPub2
-      RuleNumber: 110
-      Protocol: 6
-      Egress: true
-      RuleAction: allow
-      CidrBlock: !Ref SubnetWeb2CIDR
-      PortRange:
-        From: 443
-        To: 443
+        From: 1024
+        To: 65535
 
   NACLSubnetWeb1:
     Type: AWS::EC2::NetworkAcl
